@@ -1,3 +1,8 @@
+#on server: 'screen' ,then start script
+# use 'strg+a d' to return to terminal
+# use 'screen -r' to return to screen
+
+!export CUDA_VISIBLE_DEVICES=0
 import numpy as np
 import json
 import os
@@ -9,22 +14,18 @@ from keras.layers import recurrent
 from keras.models import Model
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import text_to_word_sequence
 
 ################################################################
 # rnn parameters
 RNN = recurrent.LSTM
-EMBED_HIDDEN_SIZE = 50
-SENT_HIDDEN_SIZE = 100
-QUERY_HIDDEN_SIZE = 100
-BATCH_SIZE = 32
+SENT_HIDDEN_SIZE = 100 #100 is the standard
+QUERY_HIDDEN_SIZE = 100 #100 is the standard
+BATCH_SIZE = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
 EPOCHS = 100
 
 #glove embedding parameters
-# BASE_DIR = ''
-# GLOVE_DIR = os.path.join(BASE_DIR, 'glove')
 GLOVE_DIR = '../glove/glove.6B.100d.txt'
-#MAX_SEQUENCE_LENGTH = 1000
-# MAX_NUM_WORDS = 80000 #20000
 EMBEDDING_DIM = 100
 EVAL_SPLIT = 0.2 
 #################################################################
@@ -55,7 +56,6 @@ for line in train_new['question']:
 for line in train_new['answer']:
     train_all.append(line)
 ####################################################################
-from keras.preprocessing.text import text_to_word_sequence
 vocab = set()
 for text in train_all:
     vocab |= set(text_to_word_sequence(text))
@@ -122,6 +122,7 @@ for word, i in word_index.items():
     if embedding_vector is not None:
         # words not found in embedding index will be all-zeros.
         embedding_matrix[i] = embedding_vector
+###########################################################################
 #create non-trainable embedding layers
 # for the context and the question each
 context_embedding_layer = Embedding(len(word_index) + 1,
