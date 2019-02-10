@@ -1,8 +1,7 @@
-#on server: 'screen' ,then start script
+# on server: 'screen' ,then start script
 # use 'strg+a d' to return to terminal
 # use 'screen -r' to return to screen
 
-!export CUDA_VISIBLE_DEVICES=0
 import numpy as np
 import json
 import os
@@ -15,12 +14,13 @@ from keras.models import Model
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.text import text_to_word_sequence
-
+###############################################################
+os.environ['CUDA_VISIBLE_DEVICES']='0'
 ################################################################
 # rnn parameters
 RNN = recurrent.LSTM
-SENT_HIDDEN_SIZE = 100 #100 is the standard
-QUERY_HIDDEN_SIZE = 100 #100 is the standard
+SENT_HIDDEN_SIZE = 400 #100 is the standard
+QUERY_HIDDEN_SIZE = 400 #100 is the standard
 BATCH_SIZE = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
 EPOCHS = 100
 
@@ -170,7 +170,7 @@ loss, acc = model.evaluate([x_eval_context, x_eval_question], y_eval_answer,
 print('Test loss / test accuracy = {:.4f} / {:.4f}'.format(loss, acc))
 ############################################################################
 print('save model')
+model.save_weights('model.h5')
 model_json = model.to_json()
 with open("models/baseline_model.json",'w') as json_file:
     json_file.write(model_json)
-model.save_weights('model.h5')
