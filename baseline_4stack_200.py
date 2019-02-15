@@ -18,9 +18,9 @@ from keras.layers import LSTM
 from keras.layers import Bidirectional
 from keras.utils import plot_model
 ###############################################################
-os.environ['CUDA_VISIBLE_DEVICES']='1'
+os.environ['CUDA_VISIBLE_DEVICES']='0'
 ################################################################
-path = 'models/baseline_200'
+path = 'models/baseline_4stack'
 # rnn parameters
 RNN = recurrent.LSTM
 SENT_HIDDEN_SIZE = 200 #100 is the standard
@@ -144,15 +144,26 @@ question_embedding_layer = Embedding(len(word_index) + 1,
 ###########################################################################
 print('Build model...')
 
+print('Build model...')
+
 context_layer = layers.Input(shape=(max_len_context,), dtype='int32',name='Context_input')
 encoded_context = context_embedding_layer(context_layer)
+encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE,return_sequences=True))(encoded_context)
+encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE,return_sequences=True))(encoded_context)
+encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE,return_sequences=True))(encoded_context)
 encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE))(encoded_context)
 
 question_layer = layers.Input(shape=(max_len_question,), dtype='int32',name='Question_input')
 encoded_question = question_embedding_layer(question_layer)
+encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE,return_sequences=True))(encoded_question)
+encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE,return_sequences=True))(encoded_question)
+encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE,return_sequences=True))(encoded_question)
 encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE))(encoded_question)
 
 merged = layers.concatenate([encoded_context, encoded_question])
+
+# bidirec = Bidirectional(LSTM(400))
+
 preds = layers.Dense(max_len_answer, activation='softmax')(merged) #dimensions of dense layer have to to the same as the answer dimensions
 
 model = Model([context_layer, question_layer], preds)
