@@ -18,14 +18,14 @@ from keras.layers import LSTM
 from keras.layers import Bidirectional
 from keras.utils import plot_model
 ###############################################################
-os.environ['CUDA_VISIBLE_DEVICES']='2'
+os.environ['CUDA_VISIBLE_DEVICES']='1'
 ################################################################
-path = 'models/baseline_3stack_200'
+path = 'models/baseline_1stack_100'
 # rnn parameters
 RNN = recurrent.LSTM
-SENT_HIDDEN_SIZE = 200 #100 is the standard
-QUERY_HIDDEN_SIZE = 200 #100 is the standard
-BATCH_SIZE = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
+SENT_HIDDEN_SIZE = 100 #100 is the standard
+QUERY_HIDDEN_SIZE = 100 #100 is the standard
+BATCH_SIZE = 2048 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
 EPOCHS = 100
 
 #glove embedding parameters

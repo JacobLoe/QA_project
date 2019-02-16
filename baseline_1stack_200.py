@@ -18,14 +18,14 @@ from keras.layers import LSTM
 from keras.layers import Bidirectional
 from keras.utils import plot_model
 ###############################################################
-os.environ['CUDA_VISIBLE_DEVICES']='3'
+os.environ['CUDA_VISIBLE_DEVICES']='2'
 ################################################################
-path = 'models/baseline_4stack_400'
+path = 'models/baseline_1stack_200'
 # rnn parameters
 RNN = recurrent.LSTM
-SENT_HIDDEN_SIZE = 400 #100 is the standard
-QUERY_HIDDEN_SIZE = 400 #100 is the standard
-BATCH_SIZE = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
+SENT_HIDDEN_SIZE = 200 #100 is the standard
+QUERY_HIDDEN_SIZE = 200 #100 is the standard
+BATCH_SIZE = 2048 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
 EPOCHS = 100
 
 #glove embedding parameters
@@ -150,12 +150,10 @@ context_layer = layers.Input(shape=(max_len_context,), dtype='int32',name='Conte
 encoded_context = context_embedding_layer(context_layer)
 encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE,return_sequences=True))(encoded_context)
 encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE,return_sequences=True))(encoded_context)
-encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE,return_sequences=True))(encoded_context)
 encoded_context = Bidirectional(LSTM(SENT_HIDDEN_SIZE))(encoded_context)
 
 question_layer = layers.Input(shape=(max_len_question,), dtype='int32',name='Question_input')
 encoded_question = question_embedding_layer(question_layer)
-encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE,return_sequences=True))(encoded_question)
 encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE,return_sequences=True))(encoded_question)
 encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE,return_sequences=True))(encoded_question)
 encoded_question = Bidirectional(LSTM(QUERY_HIDDEN_SIZE))(encoded_question)
