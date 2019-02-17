@@ -23,16 +23,16 @@ from keras import initializers, regularizers, constraints
 ###############################################################
 os.environ['CUDA_VISIBLE_DEVICES']='3'
 ################################################################
-path = 'models/baseline_attention_400'
+path = 'models/baseline_200embed_05vocab'
 # rnn parameters
-context_hidden_size = 400 #100 is the standard
-question_hidden_size = 400 #100 is the standard
+context_hidden_size = 100 #100 is the standard
+question_hidden_size = 100 #100 is the standard
 BATCH_SIZE = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
-EPOCHS = 100
+EPOCHS = 200
 
 #glove embedding parameters
-GLOVE_DIR = '../glove/glove.6B.100d.txt'
-EMBEDDING_DIM = 100
+GLOVE_DIR = '../glove/glove.6B.200d.txt'
+EMBEDDING_DIM = 200
 EVAL_SPLIT = 0.2
 #################################################################
 #open SQuAD-dataset and extract the relevant data from the json-file
@@ -66,7 +66,7 @@ vocab = set()
 for text in train_all:
     vocab |= set(text_to_word_sequence(text))
 vocab = sorted(vocab)
-vocab_size = len(vocab) + 1
+vocab_size = round(len(vocab)/2)
 print(np.shape(vocab))
 #####################################################################
 #prepare the data to use as input of the rnn
