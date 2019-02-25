@@ -1,7 +1,57 @@
+################################################################################################
 from keras import backend as K
 from keras.engine.topology import Layer
 from keras import initializers, regularizers, constraints
 
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer 
+
+from tqdm import tqdm
+###############################################################################################
+## 
+###############################################################################################
+def remove_stopwords(lines):
+    stop_words=set(stopwords.words('english')) 
+    lines_without_stopwords=[]
+    string=' '
+    for line in tqdm(lines):
+        temp_line=[]
+        for word in line.split():
+            if word not in stop_words: 
+                temp_line.append(word) 
+        lines_without_stopwords.append(string.join(temp_line))
+    return lines_without_stopwords
+
+def lemmatize(lines):   
+    wordnet_lemmatizer = WordNetLemmatizer() 
+    lines_with_lemmas=[] #stop words contain the set of stop words
+    string=' '
+    for line in tqdm(lines):
+        temp_line=[] 
+        for word in line.split():
+            temp_line.append(wordnet_lemmatizer.lemmatize(word)) 
+        lines_with_lemmas.append(string.join(temp_line)) 
+    return lines_with_lemmas
+
+def split_lines(lines):
+    new_lines=[]
+    for line in lines:
+        new_lines.append(line.split())
+    return new_lines
+
+def fit_vectors(data,glove_vectors):
+    data_array=[]
+    for i,line in enumerate(data):
+        line_aux=[]
+        for word in line:
+            word_vector=glove_vectors.word_vectors[glove_vectors.dictionary[word]]
+            line_aux.append(word_vector)
+        data_array.append(line_aux)
+    return data_array
+###################################################################################################################################################
+## Attention layers
+####################################################################################################################################################
 def dot_product(x, kernel):
     """
     Wrapper for dot product operation, in order to be compatible with both
