@@ -23,7 +23,9 @@ path='models'
 # rnn parameters
 hidden_size = 100 #100 is the standard
 batch_size = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
-epochs = 100
+epochs = 400
+
+size=10000
 
 #glove embedding parameters
 glove_dir = '../glove/glove.6B.100d.txt'
@@ -55,7 +57,6 @@ print('context ',len(train_new['context']))
 print('question',len(train_new['question']))
 print('answer',len(train_new['answer']))
 ########################################################################
-size=10000
 context=train_new['context'][:size]
 question=train_new['question'][:size]
 answer=train_new['answer'][:size]
@@ -240,4 +241,4 @@ print('save model')
 model.save_weights('models/baseline/baseline_model.h5') #save weights
 model_json = model.to_json()
 with open("models/baseline/baseline_model.json",'w') as json_file:
-    json_file.write(model_json)s
+    json_file.write(model_json)
