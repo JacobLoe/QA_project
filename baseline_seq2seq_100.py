@@ -19,7 +19,7 @@ from keras.layers import Bidirectional
 from keras.utils import plot_model
 os.environ['CUDA_VISIBLE_DEVICES']='0'
 ###################################################################
-path='models'
+path='models/baseline/'
 # rnn parameters
 hidden_size = 100 #100 is the standard
 batch_size = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
@@ -237,8 +237,9 @@ model.fit([encoder_input_context,encoder_input_question, decoder_input_answer], 
           validation_split=0.2)
 ###############################################################################
 print('save model')
-# plot_model(model, to_file=path+'/model.png')
-model.save_weights('models/baseline/baseline_model.h5') #save weights
+if not os.path.isdir(path):
+    os.makedirs(path)
+model.save_weights(path+str('baseline_model.h5')) #save weights
 model_json = model.to_json()
-with open("models/baseline/baseline_model.json",'w') as json_file:
+with open(path+str('baseline_model.json'),'w') as json_file:
     json_file.write(model_json)
