@@ -19,7 +19,7 @@ path='models/'
 # rnn parameters
 hidden_size = 100 #100 is the standard
 batch_size = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
-epochs = 100
+epochs = 400
 
 size=10000
 
