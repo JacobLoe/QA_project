@@ -102,11 +102,16 @@ def process_data(data):
                 # and will not include the start character.
                 decoder_target_answer[i, t - 1, answer_token_to_int[word]] = 1.
     #############################################
-    encoder_input={'encoder_input_context':encoder_input_context,'encoder_input_question':encoder_input_question}
-    decoder_input={'decoder_input_answer':decoder_input_answer,'decoder_target_answer':decoder_target_answer}
+    encoder_input={'context_encoder_input':encoder_input_context,'question_encoder_input':encoder_input_question}
+    decoder_input={'answer_decoder_input':decoder_input_answer,'answer_decoder_target':decoder_target_answer}
     token_to_int={'context_token_to_int':context_token_to_int,'question_token_to_int':question_token_to_int,'answer_token_to_int':answer_token_to_int}
-    len_vocab={'len_context_vocab':len_context_vocab,'len_question_vocab':len_question_vocab,'len_answer_vocab':len_answer_vocab}
+    int_to_token={'context_int_to_token':context_int_to_token,'question_int_to_token':question_int_to_token,'answer_int_to_token':answer_int_to_token}
+    len_vocab={'context_len_vocab':len_context_vocab,'question_len_vocab':len_question_vocab,'answer_len_vocab':len_answer_vocab}
     return_dict={'encoder_input':encoder_input,'decoder_input':decoder_input,
-                 'len_vocab':len_vocab,'token_to_int':token_to_int}
+                 'len_vocab':len_vocab,'token_to_int':token_to_int,'int_to_token':int_to_token}
     print(return_dict.keys())
+    print('encoder_input keys: ',return_dict['encoder_input'].keys())
+    print('decoder_input keys: ',return_dict['decoder_input'].keys())
+    print('len_vocab: ',return_dict['len_vocab'].keys())
+    print('token_to_int: ',return_dict['token_to_int'].keys())
     return return_dict

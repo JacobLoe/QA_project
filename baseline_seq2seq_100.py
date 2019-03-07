@@ -1,36 +1,32 @@
 # on server: 'screen' ,then start script
 # use 'strg+a d' to return to terminal
 # use 'screen -r' to return to screen
-
 import numpy as np
 import json
 import os
 
-from keras.utils.data_utils import get_file
 from keras.layers.embeddings import Embedding
-from keras import layers
-from keras.layers import recurrent
+from keras.layers import Concatenate
 from keras.models import Model
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.text import text_to_word_sequence
-from keras.layers import Input,Dense,LSTM,GRU
-from keras.layers import Bidirectional
+from keras.layers import Input,Dense,LSTM
 from keras.utils import plot_model
 os.environ['CUDA_VISIBLE_DEVICES']='0'
-###################################################################
-path='models/baseline/'
+
+import process_data as pd
+#########################################################################
+# https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
+path='models/'
 # rnn parameters
 hidden_size = 100 #100 is the standard
 batch_size = 512 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
-epochs = 400
+epochs = 100
 
 size=10000
 
 #glove embedding parameters
 glove_dir = '../glove/glove.6B.100d.txt'
 embedding_dim = 100
-######################################################################
+########################################################################
 #open SQuAD-dataset and extract the relevant data from the json-file
 #to a easier readable/accessible dictionary
 with open('SQuAD/train-v2.0.json') as file:
@@ -50,114 +46,34 @@ for j,data in enumerate(train['data']):
                 b=qas['question'].lower()
                 c=qas['answers'][0]['text'].lower()
                 
-                train_new['context'].append('\t'+a+'\n')
-                train_new['question'].append('\t'+b+'\n')
-                train_new['answer'].append('\t'+c+'\n')
-print('context ',len(train_new['context']))
-print('question',len(train_new['question']))
-print('answer',len(train_new['answer']))
-########################################################################
+                train_new['context'].append(a)
+                train_new['question'].append(b)
+                train_new['answer'].append('START_ '+c+' _END')
+print(len(train_new['context']))
+print(len(train_new['question']))
+print(len(train_new['answer']))
+############################################################################
 context=train_new['context'][:size]
 question=train_new['question'][:size]
 answer=train_new['answer'][:size]
-########################################################################
-# https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
-# Create word dictionaries :
-context_words=set()
-for line in context:
-    for word in line.split():
-        if word not in context_words:
-            context_words.add(word)
-    
-question_words=set()
-for line in question:
-    for word in line.split():
-        if word not in question_words:
-            question_words.add(word)
-            
-answer_words=set()
-for line in answer:
-    for word in line.split():
-        if word not in answer_words:
-            answer_words.add(word)
+data=[context,question,answer]
+input_data=pd.process_data(data)
 ############################################################################
-# get lengths and sizes :
-len_context_vocab = len(context_words)
-len_question_vocab = len(question_words)
-len_answer_vocab = len(answer_words)
+context_encoder_input=input_data['encoder_input']['context_encoder_input']
+question_encoder_input=input_data['encoder_input']['question_encoder_input']
+answer_decoder_input=input_data['decoder_input']['answer_decoder_input']
+answer_decoder_target=input_data['decoder_input']['answer_decoder_target']
 
-max_context_len = max([len(line.split()) for line in context])
-max_question_len = max([len(line.split()) for line in question])
-max_answer_len = max([len(line.split()) for line in answer])
+context_len_vocab=input_data['len_vocab']['context_len_vocab']
+question_len_vocab=input_data['len_vocab']['question_len_vocab']
+answer_len_vocab=input_data['len_vocab']['answer_len_vocab']
 
-len_context = len(context)
-len_question = len(question)
-len_answer = len(answer)
+context_token_to_int=input_data['token_to_int']['context_token_to_int']
+question_token_to_int=input_data['token_to_int']['question_token_to_int']
+answer_token_to_int=input_data['token_to_int']['answer_token_to_int']
 
-print('vocab ',len_context_vocab,len_question_vocab,len_answer_vocab)
-print('max len ',max_context_len,max_question_len,max_answer_len)
-print('data len ',len_context,len_question,len_answer)
-##############################################################################
-# Get lists of words :
-input_context_words = sorted(list(context_words))
-input_question_words = sorted(list(question_words))
-target_answer_words = sorted(list(answer_words))
-
-context_token_to_int = dict()
-context_int_to_token = dict()
-
-question_token_to_int = dict()
-question_int_to_token = dict()
-
-answer_token_to_int = dict()
-answer_int_to_token = dict()
-
-#Tokenizing the words ( Convert them to numbers ) :
-for i,token in enumerate(input_context_words):
-    context_token_to_int[token] = i
-    context_int_to_token[i]     = token
-
-for i,token in enumerate(input_question_words):
-    question_token_to_int[token] = i
-    question_int_to_token[i]     = token
-    
-for i,token in enumerate(target_answer_words):
-    answer_token_to_int[token] = i
-    answer_int_to_token[i]     = token
-    
-#print(len(context_token_to_int),len(context_int_to_token))
-###############################################################################
-# initiate numpy arrays to hold the data that our seq2seq model will use:
-encoder_input_context = np.zeros(
-    (len_context, max_context_len),
-    dtype='float32')
-encoder_input_question = np.zeros(
-    (len_question, max_question_len),
-    dtype='float32')
-decoder_input_answer = np.zeros(
-    (len_answer, max_answer_len),
-    dtype='float32')
-decoder_target_answer = np.zeros(
-    (len_answer, max_answer_len, len_answer_vocab),
-    dtype='float32')
-print('data shape ',np.shape(encoder_input_context),np.shape(encoder_input_question),np.shape(decoder_input_answer),np.shape(decoder_target_answer))
-####################################################################################
-# Process samples, to get input, output, target data:
-for i, (input_context, input_question,target_answer) in enumerate(zip(context,question,answer)):
-    for t, word in enumerate(input_context.split()):
-        encoder_input_context[i, t] = context_token_to_int[word]
-        
-    for t, word in enumerate(input_question.split()):
-        encoder_input_question[i, t] = question_token_to_int[word]
-        
-    for t, word in enumerate(target_answer.split()):
-        # decoder_target_answer is ahead of decoder_input_answer by one timestep
-        decoder_input_answer[i, t] = answer_token_to_int[word]
-        if t > 0:
-            # decoder_target_answer will be ahead by one timestep
-            # and will not include the start character.
-            decoder_target_answer[i, t - 1, answer_token_to_int[word]] = 1.
-##################################################################################
+answer_int_to_token=input_data['int_to_token']['answer_int_to_token']
+#############################################################################
 #FIX_ME: add glove download
 # https://nlp.stanford.edu/projects/glove/
 #get glove embeddings
@@ -171,71 +87,79 @@ for line in f:
 f.close()
 
 print('Found %s word vectors.' % len(embeddings_index))
-#############################################################################
+###############################################################################
 #extract the glove-embedding to a matrix
-context_embedding_matrix = np.zeros((len_context_vocab, embedding_dim))
+context_embedding_matrix = np.zeros((context_len_vocab, embedding_dim))
 for word, i in context_token_to_int.items():
     embedding_vector = embeddings_index.get(word)
     if embedding_vector is not None:
         # words not found in embedding index will be all-zeros.
         context_embedding_matrix[i] = embedding_vector
 
-question_embedding_matrix = np.zeros((len_question_vocab, embedding_dim))
+question_embedding_matrix = np.zeros((question_len_vocab, embedding_dim))
 for word, i in question_token_to_int.items():
     embedding_vector = embeddings_index.get(word)
     if embedding_vector is not None:
         # words not found in embedding index will be all-zeros.
         question_embedding_matrix[i] = embedding_vector
 
-answer_embedding_matrix = np.zeros((len_answer_vocab, embedding_dim))
+answer_embedding_matrix = np.zeros((answer_len_vocab, embedding_dim))
 for word, i in answer_token_to_int.items():
     embedding_vector = embeddings_index.get(word)
     if embedding_vector is not None:
         # words not found in embedding index will be all-zeros.
         answer_embedding_matrix[i] = embedding_vector
 print(np.shape(context_embedding_matrix),np.shape(question_embedding_matrix),np.shape(answer_embedding_matrix))
-############################################################################
-# Define an input sequence and process it.
+#################################################################################################################
+#https://medium.com/@dev.elect.iitd/neural-machine-translation-using-word-level-seq2seq-model-47538cba8cd7
+# encoder
 context_encoder_inputs = Input(shape=(None,))
-context_x = Embedding(len_context_vocab, embedding_dim,weights=[context_embedding_matrix],
-                      trainable=False)(context_encoder_inputs)
-context_x, context_state_h, context_state_c = LSTM(embedding_dim,
-                           return_state=True)(context_x)
+context_embedding_layer = Embedding(context_len_vocab, 
+                        embedding_dim,weights=[context_embedding_matrix],trainable=False)
+context_embedding=context_embedding_layer(context_encoder_inputs)
+
+context_decoder_lstm = LSTM(embedding_dim,return_state=True)
+context_x, context_state_h, context_state_c = context_decoder_lstm(context_embedding)
 context_encoder_states = [context_state_h, context_state_c]
 
+
 question_encoder_inputs = Input(shape=(None,))
-question_x = Embedding(len_question_vocab, embedding_dim,weights=[question_embedding_matrix],
-                       trainable=False)(question_encoder_inputs)
-question_x, question_state_h, question_state_c = LSTM(embedding_dim,
-                           return_state=True)(question_x)
+question_embedding_layer = Embedding(question_len_vocab, 
+                    embedding_dim,weights=[question_embedding_matrix],trainable=False)
+question_embedding=question_embedding_layer(question_encoder_inputs)
+
+question_decoder_lstm = LSTM(embedding_dim,return_state=True)
+question_x, question_state_h, question_state_c = question_decoder_lstm(question_embedding)
 question_encoder_states = [question_state_h, question_state_c]
 
-state_h=layers.Concatenate()([context_state_h,question_state_h])
-state_c=layers.Concatenate()([context_state_c,question_state_c])
-concat_states=[state_h,state_c]
 
-# Set up the decoder, using `encoder_states` as initial state.
+encoder_state_h=Concatenate()([context_state_h,question_state_h])
+encoder_state_c=Concatenate()([context_state_c,question_state_c])
+concat_encoder_states=[encoder_state_h,encoder_state_c]
+
+# decoder #################################
 decoder_inputs = Input(shape=(None,))
-x = Embedding(len_answer_vocab, embedding_dim,weights=[answer_embedding_matrix],trainable=False)(decoder_inputs)
-x = LSTM(embedding_dim*2, return_sequences=True)(x, initial_state=concat_states)
-decoder_outputs = Dense(len_answer_vocab, activation='softmax')(x)
+answer_embedding_layer = Embedding(answer_len_vocab, 
+                             embedding_dim,weights=[answer_embedding_matrix])
+answer_embedding = answer_embedding_layer(decoder_inputs)
 
-# Define the model that will turn
-# `encoder_input_data` & `decoder_input_data` into `decoder_target_data`
-model = Model([context_encoder_inputs,question_encoder_inputs, decoder_inputs], decoder_outputs)
+decoder_lstm = LSTM(embedding_dim*2, return_sequences=True,return_state=True)
+decoder_lstm_output,_,_ = decoder_lstm(answer_embedding, initial_state=concat_encoder_states)
 
-# Compile & run training
-model.compile(optimizer='adam', loss='categorical_crossentropy')
+decoder_dense = Dense(answer_len_vocab, activation='softmax')
+decoder_output = decoder_dense(decoder_lstm_output)
+
+model = Model([context_encoder_inputs,question_encoder_inputs, decoder_inputs], decoder_output)
+model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['acc'])
 model.summary()
-###########################################################################
-# Note that `decoder_target_data` needs to be one-hot encoded,
-# rather than sequences of integers like `decoder_input_data`!
-
-model.fit([encoder_input_context,encoder_input_question, decoder_input_answer], decoder_target_answer,
+#############################################################################################
+model.fit([context_encoder_input,
+           question_encoder_input, 
+           answer_decoder_input], 
+          answer_decoder_target,
           batch_size=batch_size,
-          epochs=epochs,
-          validation_split=0.2)
-###############################################################################
+          epochs=epochs,)
+#############################################################################################
 print('save model')
 if not os.path.isdir(path):
     os.makedirs(path)
