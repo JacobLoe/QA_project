@@ -90,8 +90,9 @@ def get_raw_scores(dataset, preds):
         if not gold_answers:
           # For unanswerable questions, only correct answer is empty string
           gold_answers = ['']
-        if qid not in preds:
-          print('Missing prediction for %s' % qid)
+        if qid in preds:
+          print('Found prediction for %s' % qid)
+          #print('Missing prediction for %s' % qid)
           continue
         a_pred = preds[qid]
         # Take max over all gold answers
