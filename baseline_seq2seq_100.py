@@ -11,6 +11,8 @@ from keras.models import Model
 from keras.layers import Input,Dense,LSTM
 from keras.utils import plot_model
 
+from tqdm import tqdm
+
 import preprocess_data as ppd
 import make_RNN_models as mrm
 
@@ -19,9 +21,9 @@ import make_RNN_models as mrm
 # https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
 path='models/'
 # rnn parameters
-hidden_size = 100 #100 is the standard
+hidden_size = 100
 batch_size = 100 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
-epochs = 50
+epochs = 25
 
 size=10000
 
@@ -157,7 +159,7 @@ for slice_size in range(9):
     with open(path+str('decoder_model.json'),'w') as json_file:
         json_file.write(decoder_model_json)
     #######################################################################################
-    for seq_index in tqdm(range(1)):#len(context))):
+    for seq_index in tqdm(range(len(context))):
         context_input_seq = input_data['encoder_input']['context_encoder_input'][seq_index:seq_index+1]
         question_input_seq = input_data['encoder_input']['question_encoder_input'][seq_index:seq_index+1]
 

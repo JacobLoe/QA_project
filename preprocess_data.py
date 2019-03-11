@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from tqdm import tqdm
 
 def get_data_max_shapes(data,size,answer_words):
@@ -14,7 +15,7 @@ def get_data_max_shapes(data,size,answer_words):
     max_answer_len = []
 
     print('computing the maximum shapes of the data')
-    for slice_size in tqdm(range(9)):
+    for slice_size in tqdm(range(math.ceil(len(data[0])/size))):
         context=data[0][size*slice_size:size*(slice_size+1)]
         question=data[1][size*slice_size:size*(slice_size+1)]
         answer=data[2][size*slice_size:size*(slice_size+1)]
