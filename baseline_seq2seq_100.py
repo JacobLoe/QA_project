@@ -4,6 +4,7 @@
 import numpy as np
 import json
 import os
+import math
 
 from keras.layers.embeddings import Embedding
 from keras.layers import Concatenate
@@ -13,10 +14,10 @@ from keras.utils import plot_model
 
 from tqdm import tqdm
 
-import preprocess_data as ppd
-import make_RNN_models as mrm
+import old_preprocess_data as ppd
+import old_make_RNN_models as mrm
 
-#os.environ['CUDA_VISIBLE_DEVICES']='0'
+os.environ['CUDA_VISIBLE_DEVICES']='1'
 #########################################################################
 # https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
 path='models/'
@@ -55,6 +56,8 @@ for j,data in enumerate(train['data']):
                 train_new['context'].append(a)
                 train_new['question'].append(b)
                 train_new['answer'].append('START_ '+c+' _END')
+train_new['qid']=train_new['qid'][:15000]
+data=[train_new['context'][:15000],train_new['question'][:15000],train_new['answer'][:15000]]
 ############################################################################
 #create the vocabulary for the answers
 answer_words=set()
@@ -82,13 +85,13 @@ f.close()
 print('Found %s word vectors.' % len(embeddings_index))
 #######################################################
 qid_to_answer_dict={}
-for slice_size in range(9):
+for slice_size in range(math.ceil(len(data[0])/size)):
     print('training on part %s of the dataset' % slice_size)
-    context=train_new['context'][size*slice_size:size*(slice_size+1)]
-    question=train_new['question'][size*slice_size:size*(slice_size+1)]
-    answer=train_new['answer'][size*slice_size:size*(slice_size+1)]
-    data=[context,question,answer]
-    input_data=ppd.process_data(data,data_max_shapes,answer_words)
+    context=data[0][size*slice_size:size*(slice_size+1)]
+    question=data[1][size*slice_size:size*(slice_size+1)]
+    answer=data[2][size*slice_size:size*(slice_size+1)]
+    data_slice=[context,question,answer]
+    input_data=ppd.process_data(data_slice,data_max_shapes,answer_words)
 
     context_encoder_input=input_data['encoder_input']['context_encoder_input']
     question_encoder_input=input_data['encoder_input']['question_encoder_input']

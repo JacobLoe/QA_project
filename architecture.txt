@@ -1,3 +1,0 @@
-- model is an encoder-decoder architecture
-- sequence-to-sequence
-- 

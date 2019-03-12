@@ -6,27 +6,19 @@ from keras.layers.embeddings import Embedding
 from keras.layers import Concatenate
 from keras.models import Model
 from keras.layers import Input,Dense,LSTM
-from keras.utils import plot_model
 
 from tqdm import tqdm
 
-def models(embeddings,data_max_shapes,hidden_size,embedding_dim):
-    
-    context_embedding_matrix = embeddings[0]
-    question_embedding_matrix = embeddings[1]
-    answer_embedding_matrix = embeddings[2]
-    
-    len_context_vocab = data_max_shapes['len_context_vocab']
-    len_question_vocab = data_max_shapes['len_question_vocab']
-    len_answer_vocab = data_max_shapes['len_answer_vocab']
+def models(embeddings,data_info,hidden_size,embedding_dim):
+        
     print('building models')
     ###########################################################################################################
     # https://medium.com/@dev.elect.iitd/neural-machine-translation-using-word-level-seq2seq-model-47538cba8cd7
     # train_model
     
     context_encoder_inputs = Input(shape=(None,),name='context')
-    context_embedding_layer = Embedding(len_context_vocab, 
-                            embedding_dim,weights=[context_embedding_matrix],trainable=False,name='context_embeddings')
+    context_embedding_layer = Embedding(data_info['len_context_vocab'], 
+                            embedding_dim,weights=[embeddings[0]],trainable=False,name='context_embeddings')
     context_embedding=context_embedding_layer(context_encoder_inputs)
 
     context_decoder_lstm = LSTM(hidden_size,return_state=True,name='context_lstm')
@@ -35,8 +27,8 @@ def models(embeddings,data_max_shapes,hidden_size,embedding_dim):
 
 
     question_encoder_inputs = Input(shape=(None,),name='question')
-    question_embedding_layer = Embedding(len_question_vocab, 
-                        embedding_dim,weights=[question_embedding_matrix],trainable=False,name='question_embeddings')
+    question_embedding_layer = Embedding(data_info['len_question_vocab'], 
+                        embedding_dim,weights=[embeddings[1]],trainable=False,name='question_embeddings')
     question_embedding=question_embedding_layer(question_encoder_inputs)
 
     question_decoder_lstm = LSTM(hidden_size,return_state=True,name='question_lstm')
@@ -50,14 +42,14 @@ def models(embeddings,data_max_shapes,hidden_size,embedding_dim):
 
     # decoder #################################
     decoder_inputs = Input(shape=(None,),name='answer')
-    answer_embedding_layer = Embedding(len_answer_vocab, 
-                                 embedding_dim,weights=[answer_embedding_matrix],name='answer_embeddings')
+    answer_embedding_layer = Embedding(data_info['len_answer_vocab'], 
+                                 embedding_dim,weights=[embeddings[2]],name='answer_embeddings')
     answer_embedding = answer_embedding_layer(decoder_inputs)
 
     decoder_lstm = LSTM(hidden_size*2, return_sequences=True,return_state=True,name='decoder_lstm')
     decoder_lstm_output,_,_ = decoder_lstm(answer_embedding, initial_state=concat_encoder_states)
 
-    decoder_dense = Dense(len_answer_vocab, activation='softmax',name='ouput')
+    decoder_dense = Dense(data_info['len_answer_vocab'], activation='softmax',name='ouput')
     decoder_output = decoder_dense(decoder_lstm_output)
 
     train_model = Model([context_encoder_inputs,question_encoder_inputs, decoder_inputs], decoder_output)
