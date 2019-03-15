@@ -90,9 +90,8 @@ def get_raw_scores(dataset, preds):
         if not gold_answers:
           # For unanswerable questions, only correct answer is empty string
           gold_answers = ['']
-        if qid in preds:
-          print('Found prediction for %s' % qid)
-          #print('Missing prediction for %s' % qid)
+        if qid not in preds:
+          print('Missing prediction for %s' % qid)
           continue
         a_pred = preds[qid]
         # Take max over all gold answers
@@ -257,7 +256,7 @@ def main():
     merge_eval(out_eval, no_ans_eval, 'NoAns')
   if OPTS.na_prob_file:
     find_all_best_thresh(out_eval, preds, exact_raw, f1_raw, na_probs, qid_to_has_ans)
-  if OPTS.na_prob_file and OPTS.out_image_dir:
+  if True and OPTS.out_image_dir: #OPTS.na_prob_file
     run_precision_recall_analysis(out_eval, exact_raw, f1_raw, na_probs, 
                                   qid_to_has_ans, OPTS.out_image_dir)
     histogram_na_prob(na_probs, has_ans_qids, OPTS.out_image_dir, 'hasAns')
