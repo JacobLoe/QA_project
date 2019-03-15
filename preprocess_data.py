@@ -117,7 +117,7 @@ def decode_sequence(context_input_seq,question_input_seq,answer_token_to_int,ans
         # Exit condition: either hit max length
         # or find stop character.
         if (sampled_char == '_END' or
-           len(decoded_sentence) > 52):
+           len(decoded_sentence) > 251):
             stop_condition = True
 
         # Update the target sequence (of length 1).

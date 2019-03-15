@@ -1,0 +1,91 @@
+# on server: 'screen' ,then start script
+# use 'strg+a d' to return to terminal
+# use 'screen -r' to return to screen
+import numpy as np
+import json
+import os
+import math
+
+from keras.models import model_from_json
+os.environ['CUDA_VISIBLE_DEVICES']='3'
+
+import preprocess_data as ppd
+import train_slices as ts
+
+from tqdm import tqdm
+##########################################
+# https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
+path='models/'
+
+size=10000
+
+#glove embedding parameters
+glove_dir = '../glove/glove.6B.100d.txt'
+embedding_dim = 100
+############################################
+#open SQuAD-dataset and extract the relevant data from the json-file
+#to a easier readable/accessible dictionary
+with open('SQuAD/data_new.json') as file:
+    train=json.load(file)
+train_qid=[]
+train_context=[]
+train_question=[]
+train_answer=[]
+train_new={'context':train_context,'question':train_question,'answer':train_answer,'qid':train_qid}
+for j,data in enumerate(train['data']):
+    for i,paragraph in enumerate(data['paragraphs']):
+        context=paragraph['context']
+        for qas in paragraph['qas']:
+            #create a dataset with only the answerable questions
+            #add a bos and eos token to the target
+            if (qas['is_impossible']==False):
+                c=qas['answers'][0]['text'].lower()
+                
+                train_new['qid'].append(qas['id'])
+                train_new['context'].append(context.lower())
+                train_new['question'].append(qas['question'].lower())
+                train_new['answer'].append('START_ '+c+' _END')
+            else:
+                train_new['qid'].append(qas['id'])
+                train_new['context'].append(context.lower())
+                train_new['question'].append(qas['question'].lower())
+                train_new['answer'].append('START_ '+str(qas['answers'])+' _END')
+################################################################
+data_info=ppd.get_data_info([train_new['context'],
+                             train_new['question'],
+                             train_new['answer']])
+#######################################################################
+# load the trained encoder and decoder model
+print('start inference')
+with open(path+'encoder_model.json', 'r') as encoder_json_file:
+    loaded_model_json = encoder_json_file.read()
+    encoder_model = model_from_json(loaded_model_json)
+encoder_model.load_weights(path+'encoder_model.h5')
+encoder_json_file.close()
+    
+with open(path+'decoder_model.json', 'r') as decoder_json_file:
+    loaded_model_json = decoder_json_file.read()
+    decoder_model = model_from_json(loaded_model_json)
+decoder_model.load_weights(path+'decoder_model.h5')
+decoder_json_file.close()
+
+# answer question
+qid_to_answer_dict={}
+for slice_size in range(math.ceil(len(train_new['context'])/size)):
+    print('inference on part %s of the dataset' % slice_size)
+    input_data=ppd.process_data([train_new['context'][size*slice_size:size*(slice_size+1)],
+                                 train_new['question'][size*slice_size:size*(slice_size+1)],
+                                 train_new['answer'][size*slice_size:size*(slice_size+1)]]
+                                ,data_info)
+    for seq_index in tqdm(range(len(train_new['context'][size*slice_size:size*(slice_size+1)]))):
+        decoded_sentence = ppd.decode_sequence(input_data['encoder_input']['context_encoder_input'][seq_index:seq_index+1],
+                                                input_data['encoder_input']['question_encoder_input'][seq_index:seq_index+1],
+                                                data_info['answer_token_to_int'],
+                                                data_info['answer_int_to_token'],
+                                                encoder_model,
+                                                decoder_model)
+        qid_to_answer_dict[train_new['qid'][seq_index+(slice_size*size)]]=decoded_sentence
+print('write answer to json')
+with open(path+'answers_adversarial.json', 'w') as json_file:
+    json.dump(qid_to_answer_dict, json_file)
+json_file.close()
