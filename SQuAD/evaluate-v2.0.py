@@ -256,7 +256,7 @@ def main():
     merge_eval(out_eval, no_ans_eval, 'NoAns')
   if OPTS.na_prob_file:
     find_all_best_thresh(out_eval, preds, exact_raw, f1_raw, na_probs, qid_to_has_ans)
-  if True and OPTS.out_image_dir: #OPTS.na_prob_file
+  if OPTS.na_prob_file and OPTS.out_image_dir:
     run_precision_recall_analysis(out_eval, exact_raw, f1_raw, na_probs, 
                                   qid_to_has_ans, OPTS.out_image_dir)
     histogram_na_prob(na_probs, has_ans_qids, OPTS.out_image_dir, 'hasAns')
