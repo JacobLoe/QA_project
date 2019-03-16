@@ -1,0 +1,8 @@
+In order to run the Adversarial Example Generation code,  you need to download the
+Counter Fitting File from https://github.com/nmrksic/counter-fitting and add it to
+the same directory.
+
+Reference:
+Nikola Mrksic, Diarmuid O Séaghdha, BlaiseThomson, Milica Gasic, Lina Rojas-Barahona,
+Pei-Hao Su, David Vandyke, Tsung-Hsien Wen, Steve Young. 2016.
+Counter-fitting Word Vectors to Linguistic Constraints.
