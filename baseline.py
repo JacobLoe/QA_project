@@ -14,11 +14,10 @@ import train_slices as ts
 
 from tqdm import tqdm
 ##########################################
-# https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
 path='models/'
 # rnn parameters
-hidden_size = 100 #100 is the standard
-batch_size = 100 #for the training on the GPU this to be has to very large, otherwise the GPU is used very inefficiently
+hidden_size = 100 
+batch_size = 100 
 epochs = 25
 
 size=10000
@@ -28,9 +27,9 @@ glove_dir = '../glove/glove.6B.100d.txt'
 embedding_dim = 100
 ############################################
 #open SQuAD-dataset and extract the relevant data from the json-file
-#to a easier readable/accessible dictionary
-with open('SQuAD/train-v2.0.json') as file:
-    train=json.load(file)
+#to an easier readable/accessible dictionary
+with open('SQuAD/train-v2.0.json') as data_file:
+    train=json.load(data_file)
 train_qid=[]
 train_context=[]
 train_question=[]
@@ -59,10 +58,7 @@ data_info=ppd.get_data_info([train_new['context'],
                              train_new['question'],
                              train_new['answer']])
 
-FIX_ME: add glove download
-https://nlp.stanford.edu/projects/glove/
-get glove embeddings
-https://medium.com/@sabber/classifying-yelp-review-comments-using-cnn-lstm-and-pre-trained-glove-word-embeddings-part-3-53fcea9a17fa
+#get glove embeddings
 print('getting the glove embeddings')
 embeddings_index = {}
 f = open(glove_dir)
@@ -109,7 +105,7 @@ for slice_size in range(10,math.ceil(len(train_new['context'])/size)):
                     size,
                     path)
 ######################################################################
-#load encoder and decoder models
+# load the trained encoder and decoder model
 print('start inference')
 with open(path+'encoder_model.json', 'r') as encoder_json_file:
     loaded_model_json = encoder_json_file.read()
@@ -132,7 +128,6 @@ for slice_size in range(math.ceil(len(train_new['context'])/size)):
                                  train_new['answer'][size*slice_size:size*(slice_size+1)]]
                                 ,data_info)
     for seq_index in tqdm(range(len(train_new['context'][size*slice_size:size*(slice_size+1)]))):
-        print('len_ans_dict',len(qid_to_answer_dict))
         decoded_sentence = ppd.decode_sequence(input_data['encoder_input']['context_encoder_input'][seq_index:seq_index+1],
                                                 input_data['encoder_input']['question_encoder_input'][seq_index:seq_index+1],
                                                 data_info['answer_token_to_int'],
@@ -140,6 +135,7 @@ for slice_size in range(math.ceil(len(train_new['context'])/size)):
                                                 encoder_model,
                                                 decoder_model)
         qid_to_answer_dict[train_new['qid'][seq_index+(slice_size*size)]]=decoded_sentence
+# write the answers to a .json-file
 print('write answer to json')
 with open(path+'answers.json', 'w') as json_file:
     json.dump(qid_to_answer_dict, json_file)

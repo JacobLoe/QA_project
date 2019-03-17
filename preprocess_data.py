@@ -1,6 +1,7 @@
 import numpy as np
 
 def get_data_info(data):
+    # get the maximum shapes of the dataset
     # create vocabulary
     context_words=set()
     for line in data[0]:
@@ -54,7 +55,9 @@ def get_data_info(data):
                 'answer_int_to_token':answer_int_to_token}
     return return_dict
 
-def process_data(data,data_info):  
+def process_data(data,data_info):
+    # use the information gather with data_info function to create output data of uniform shape
+    ##########################################################################
     # initiate numpy arrays to hold the data that our seq2seq model will use:
     encoder_input_context = np.zeros(
         (len(data[0]), data_info['max_context_len']),
@@ -88,9 +91,6 @@ def process_data(data,data_info):
     encoder_input={'context_encoder_input':encoder_input_context,'question_encoder_input':encoder_input_question}
     decoder_input={'answer_decoder_input':decoder_input_answer,'answer_decoder_target':decoder_target_answer}
     return_dict={'encoder_input':encoder_input,'decoder_input':decoder_input}
-#     print(return_dict.keys())
-#     print('encoder_input keys: ',return_dict['encoder_input'].keys())
-#     print('decoder_input keys: ',return_dict['decoder_input'].keys())
     return return_dict
 
 def decode_sequence(context_input_seq,question_input_seq,answer_token_to_int,answer_int_to_token,encoder_model,decoder_model):
@@ -126,4 +126,4 @@ def decode_sequence(context_input_seq,question_input_seq,answer_token_to_int,ans
 
         # Update states
         states_value = [h, c]
-    return decoded_sentence[:-4] #[:-4] removes the end-of-sequence token
+    return decoded_sentence[:-4] #[:-4] removes the end-of-sequence token from the answer

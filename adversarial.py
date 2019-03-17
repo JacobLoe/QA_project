@@ -7,26 +7,21 @@ import os
 import math
 
 from keras.models import model_from_json
-os.environ['CUDA_VISIBLE_DEVICES']='3'
+os.environ['CUDA_VISIBLE_DEVICES']='0'
 
 import preprocess_data as ppd
 import train_slices as ts
 
 from tqdm import tqdm
 ##########################################
-# https://towardsdatascience.com/nlp-sequence-to-sequence-networks-part-1-processing-text-data-d141a5643b72
 path='models/'
 
 size=10000
-
-#glove embedding parameters
-glove_dir = '../glove/glove.6B.100d.txt'
-embedding_dim = 100
 ############################################
 #open SQuAD-dataset and extract the relevant data from the json-file
-#to a easier readable/accessible dictionary
-with open('SQuAD/data_new.json') as file:
-    train=json.load(file)
+#to an easier readable/accessible dictionary
+with open('SQuAD/data_new.json') as data_file:
+    train=json.load(data_file)
 train_qid=[]
 train_context=[]
 train_question=[]
@@ -85,6 +80,7 @@ for slice_size in range(math.ceil(len(train_new['context'])/size)):
                                                 encoder_model,
                                                 decoder_model)
         qid_to_answer_dict[train_new['qid'][seq_index+(slice_size*size)]]=decoded_sentence
+# write the answers to a .json-file
 print('write answer to json')
 with open(path+'answers_adversarial.json', 'w') as json_file:
     json.dump(qid_to_answer_dict, json_file)

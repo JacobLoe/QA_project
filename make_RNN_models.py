@@ -12,9 +12,6 @@ from tqdm import tqdm
 def models(embeddings,data_info,hidden_size,embedding_dim):
         
     print('building models')
-    ###########################################################################################################
-    # https://medium.com/@dev.elect.iitd/neural-machine-translation-using-word-level-seq2seq-model-47538cba8cd7
-    # train_model
     
     context_encoder_inputs = Input(shape=(None,),name='context')
     context_embedding_layer = Embedding(data_info['len_context_vocab'], 
@@ -54,7 +51,9 @@ def models(embeddings,data_info,hidden_size,embedding_dim):
 
     train_model = Model([context_encoder_inputs,question_encoder_inputs, decoder_inputs], decoder_output)
     train_model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['acc'])
+
     ###########################################################################################################
+    #build the encoder and decoder models used during inference
     # encoder model 
     encoder_model = Model([context_encoder_inputs,question_encoder_inputs],concat_encoder_states)
     ##############################################################################################
@@ -73,6 +72,7 @@ def models(embeddings,data_info,hidden_size,embedding_dim):
         [decoder_inputs] + decoder_states_inputs,
         [decoder_outputs2] + decoder_states2,)
     
+
     return_models={'train_model':train_model,'encoder_model':encoder_model,'decoder_model':decoder_model}
     
     return return_models
