@@ -9,11 +9,20 @@
  - to start inference for the train set without training, you have to comment lines 95-106 in 'baseline.py'
  
 the project requires the following libraries:
+
 keras
+
 tqdm - pip3 install tqdm
+
 numpy 
+
 nltk
+
 scipy - pip3 install scipy
+
 gensim - pip3 install gensim
+
 bert_embeddings - pip3 install bert_embedding
+
 mxnet - pip3 install mxnet
+
